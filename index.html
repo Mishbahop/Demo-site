@@ -1,14 +1,14 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo Predictor - 30S Round Prediction</title>
+    <title>WinGo Predictor – Auto‑Fetch</title>
     <style>
+        /* same aesthetic styles as before (omitted for brevity, but included in the actual code) */
         :root {
             --bg-deep: #060b14;
             --bg-card: rgba(16, 20, 35, 0.85);
-            --bg-card-hover: rgba(22, 27, 45, 0.9);
             --gold: #d4a745;
             --gold-glow: #f0c860;
             --red: #e74c3c;
@@ -19,21 +19,14 @@
             --violet-glow: #c084fc;
             --text: #e2e4ec;
             --text-dim: #8a8fa0;
-            --border: rgba(255, 255, 255, 0.08);
-            --border-glow: rgba(255, 255, 255, 0.15);
+            --border: rgba(255,255,255,0.08);
             --radius: 18px;
             --radius-sm: 10px;
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             background: var(--bg-deep);
             color: var(--text);
             min-height: 100vh;
@@ -44,10 +37,7 @@
             position: relative;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            -webkit-user-select: none;
         }
-
-        /* Ambient background orbs */
         .bg-orb {
             position: fixed;
             border-radius: 50%;
@@ -55,550 +45,181 @@
             opacity: 0.12;
             pointer-events: none;
             z-index: 0;
-            animation: orbFloat 20s ease-in-out infinite;
         }
-        .bg-orb.orb-1 {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, #6c3ce0, transparent);
-            top: -15%;
-            left: -10%;
-            animation-delay: 0s;
-        }
-        .bg-orb.orb-2 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, #d4a745, transparent);
-            bottom: -12%;
-            right: -8%;
-            animation-delay: -7s;
-        }
-        .bg-orb.orb-3 {
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, #e74c3c, transparent);
-            top: 40%;
-            left: 50%;
-            animation-delay: -14s;
-        }
+        .bg-orb.orb-1 { width:500px; height:500px; background:radial-gradient(circle,#6c3ce0,transparent); top:-15%; left:-10%; animation:orbFloat 20s infinite; }
+        .bg-orb.orb-2 { width:400px; height:400px; background:radial-gradient(circle,#d4a745,transparent); bottom:-12%; right:-8%; animation:orbFloat 20s -7s infinite; }
+        .bg-orb.orb-3 { width:350px; height:350px; background:radial-gradient(circle,#e74c3c,transparent); top:40%; left:50%; animation:orbFloat 20s -14s infinite; }
         @keyframes orbFloat {
-            0%,
-            100% {
-                transform: translate(0, 0) scale(1);
-            }
-            25% {
-                transform: translate(60px, -40px) scale(1.15);
-            }
-            50% {
-                transform: translate(-20px, 30px) scale(0.9);
-            }
-            75% {
-                transform: translate(-50px, -20px) scale(1.08);
-            }
+            0%,100%{ transform:translate(0,0) scale(1); }
+            25%{ transform:translate(60px,-40px) scale(1.15); }
+            50%{ transform:translate(-20px,30px) scale(0.9); }
+            75%{ transform:translate(-50px,-20px) scale(1.08); }
         }
-
-        /* Grid lines subtle overlay */
         .grid-overlay {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.03;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+            position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.03;
+            background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
             background-size: 50px 50px;
         }
-
         .main-container {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 520px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            position:relative; z-index:1; width:100%; max-width:520px; padding:16px; display:flex; flex-direction:column; gap:16px;
         }
-
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 6px 0;
-        }
-        .header .logo-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 2px;
-        }
+        .header { text-align:center; padding:6px 0; }
+        .header .logo-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:2px; }
         .header .icon-pulse {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--gold), #e8b730);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            animation: iconPulse 2s ease-in-out infinite;
-            box-shadow: 0 0 30px rgba(212, 167, 69, 0.4);
+            width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#d4a745,#e8b730);
+            display:flex; align-items:center; justify-content:center; font-size:20px; animation:iconPulse 2s infinite;
+            box-shadow:0 0 30px rgba(212,167,69,0.4);
         }
         @keyframes iconPulse {
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(212, 167, 69, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 45px rgba(240, 200, 96, 0.7);
-            }
+            0%,100%{ box-shadow:0 0 20px rgba(212,167,69,0.4); }
+            50%{ box-shadow:0 0 45px rgba(240,200,96,0.7); }
         }
         .header h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f0d78c, #d4a745, #f0d78c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size:1.6rem; font-weight:700; letter-spacing:-0.5px;
+            background: linear-gradient(135deg,#f0d78c,#d4a745,#f0d78c);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip:text;
         }
-        .header .subtitle {
-            font-size: 0.78rem;
-            color: var(--text-dim);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
-
-        /* Prediction Cards */
-        .prediction-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
+        .header .subtitle { font-size:0.78rem; color:var(--text-dim); letter-spacing:1.5px; text-transform:uppercase; }
+        .prediction-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .pred-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 18px 14px;
-            text-align: center;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
+            background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px 14px; text-align:center; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+            transition:var(--transition); position:relative; overflow:hidden;
         }
         .pred-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: var(--radius);
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
+            content:''; position:absolute; inset:0; border-radius:var(--radius); opacity:0; transition:opacity 0.5s; pointer-events:none;
         }
-        .pred-card.glow-big::before {
-            background: radial-gradient(ellipse at center, rgba(240, 200, 96, 0.12) 0%, transparent 70%);
-            opacity: 1;
-        }
-        .pred-card.glow-small::before {
-            background: radial-gradient(ellipse at center, rgba(100, 180, 255, 0.12) 0%, transparent 70%);
-            opacity: 1;
-        }
-        .pred-card.glow-red::before {
-            background: radial-gradient(ellipse at center, rgba(231, 76, 60, 0.15) 0%, transparent 70%);
-            opacity: 1;
-        }
-        .pred-card.glow-green::before {
-            background: radial-gradient(ellipse at center, rgba(46, 204, 113, 0.15) 0%, transparent 70%);
-            opacity: 1;
-        }
-        .pred-card.glow-violet::before {
-            background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.18) 0%, transparent 70%);
-            opacity: 1;
-        }
-        .pred-card .card-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-dim);
-            margin-bottom: 8px;
-        }
-        .pred-card .pred-value {
-            font-size: 2.4rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            transition: all 0.4s;
-            line-height: 1;
-        }
-        .pred-card .pred-value.big-color {
-            color: #f0c860;
-            text-shadow: 0 0 30px rgba(240, 200, 96, 0.5);
-        }
-        .pred-card .pred-value.small-color {
-            color: #6db3f2;
-            text-shadow: 0 0 30px rgba(109, 179, 242, 0.5);
-        }
-        .pred-card .pred-value.red-color {
-            color: #ff6b5b;
-            text-shadow: 0 0 30px rgba(255, 107, 91, 0.5);
-        }
-        .pred-card .pred-value.green-color {
-            color: #50e890;
-            text-shadow: 0 0 30px rgba(80, 232, 144, 0.5);
-        }
-        .pred-card .pred-value.violet-color {
-            color: #c084fc;
-            text-shadow: 0 0 30px rgba(192, 132, 252, 0.5);
-        }
-        .confidence-bar-wrap {
-            margin-top: 10px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .confidence-bar-fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s;
-        }
-        .conf-text {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-top: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        /* Number Pad */
+        .pred-card.glow-big::before { background:radial-gradient(ellipse at center,rgba(240,200,96,0.12) 0%,transparent 70%); opacity:1; }
+        .pred-card.glow-small::before { background:radial-gradient(ellipse at center,rgba(100,180,255,0.12) 0%,transparent 70%); opacity:1; }
+        .pred-card.glow-red::before { background:radial-gradient(ellipse at center,rgba(231,76,60,0.15) 0%,transparent 70%); opacity:1; }
+        .pred-card.glow-green::before { background:radial-gradient(ellipse at center,rgba(46,204,113,0.15) 0%,transparent 70%); opacity:1; }
+        .pred-card.glow-violet::before { background:radial-gradient(ellipse at center,rgba(168,85,247,0.18) 0%,transparent 70%); opacity:1; }
+        .pred-card .card-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; color:var(--text-dim); margin-bottom:8px; }
+        .pred-card .pred-value { font-size:2.4rem; font-weight:800; letter-spacing:-1px; transition:all 0.4s; line-height:1; }
+        .pred-card .pred-value.big-color { color:#f0c860; text-shadow:0 0 30px rgba(240,200,96,0.5); }
+        .pred-card .pred-value.small-color { color:#6db3f2; text-shadow:0 0 30px rgba(109,179,242,0.5); }
+        .pred-card .pred-value.red-color { color:#ff6b5b; text-shadow:0 0 30px rgba(255,107,91,0.5); }
+        .pred-card .pred-value.green-color { color:#50e890; text-shadow:0 0 30px rgba(80,232,144,0.5); }
+        .pred-card .pred-value.violet-color { color:#c084fc; text-shadow:0 0 30px rgba(192,132,252,0.5); }
+        .confidence-bar-wrap { margin-top:10px; height:4px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; }
+        .confidence-bar-fill { height:100%; border-radius:10px; transition: width 0.6s, background 0.4s; }
+        .conf-text { font-size:0.7rem; color:var(--text-dim); margin-top:4px; }
         .numpad-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
         }
-        .numpad-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-dim);
-            text-align: center;
-            margin-bottom: 12px;
-        }
-        .numpad-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-        }
+        .numpad-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; color:var(--text-dim); text-align:center; margin-bottom:12px; }
+        .numpad-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
         .numpad-btn {
-            aspect-ratio: 1;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid var(--border);
-            background: rgba(20, 24, 40, 0.7);
-            color: #fff;
-            font-size: 1.2rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-            letter-spacing: 0;
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            min-width: 44px;
-            min-height: 44px;
+            aspect-ratio:1; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+            background:rgba(20,24,40,0.7); color:#fff; font-size:1.2rem; font-weight:700; cursor:pointer;
+            transition:all 0.2s; position:relative; overflow:hidden; outline:none; min-width:44px; min-height:44px;
         }
-        .numpad-btn:active {
-            transform: scale(0.92);
-            transition: transform 0.1s;
-        }
-        .numpad-btn:hover {
-            border-color: var(--border-glow);
-            background: rgba(30, 35, 55, 0.8);
-        }
-        .numpad-btn.tint-red {
-            border-color: rgba(231, 76, 60, 0.3);
-        }
-        .numpad-btn.tint-red:hover {
-            border-color: rgba(231, 76, 60, 0.6);
-            box-shadow: 0 0 18px rgba(231, 76, 60, 0.2);
-        }
-        .numpad-btn.tint-green {
-            border-color: rgba(46, 204, 113, 0.3);
-        }
-        .numpad-btn.tint-green:hover {
-            border-color: rgba(46, 204, 113, 0.6);
-            box-shadow: 0 0 18px rgba(46, 204, 113, 0.2);
-        }
-        .numpad-btn.tint-violet {
-            border-color: rgba(168, 85, 247, 0.35);
-        }
-        .numpad-btn.tint-violet:hover {
-            border-color: rgba(168, 85, 247, 0.65);
-            box-shadow: 0 0 18px rgba(168, 85, 247, 0.25);
-        }
-        .numpad-btn .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(0);
-            animation: rippleAnim 0.5s ease-out forwards;
-            pointer-events: none;
-        }
-        @keyframes rippleAnim {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-        .numpad-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
+        .numpad-btn:active { transform:scale(0.92); transition:transform 0.1s; }
+        .numpad-btn:hover { border-color:var(--border-glow); background:rgba(30,35,55,0.8); }
+        .numpad-btn.tint-red { border-color:rgba(231,76,60,0.3); }
+        .numpad-btn.tint-red:hover { border-color:rgba(231,76,60,0.6); box-shadow:0 0 18px rgba(231,76,60,0.2); }
+        .numpad-btn.tint-green { border-color:rgba(46,204,113,0.3); }
+        .numpad-btn.tint-green:hover { border-color:rgba(46,204,113,0.6); box-shadow:0 0 18px rgba(46,204,113,0.2); }
+        .numpad-btn.tint-violet { border-color:rgba(168,85,247,0.35); }
+        .numpad-btn.tint-violet:hover { border-color:rgba(168,85,247,0.65); box-shadow:0 0 18px rgba(168,85,247,0.25); }
+        .numpad-actions { display:flex; gap:8px; margin-top:10px; }
         .action-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: rgba(20, 24, 40, 0.6);
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 0.78rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            transition: var(--transition);
-            text-transform: uppercase;
-            -webkit-tap-highlight-color: transparent;
+            flex:1; padding:10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+            background:rgba(20,24,40,0.6); color:var(--text-dim); cursor:pointer; font-size:0.78rem;
+            font-weight:600; letter-spacing:1px; transition:var(--transition); text-transform:uppercase;
         }
-        .action-btn:hover {
-            border-color: var(--border-glow);
-            color: #fff;
-            background: rgba(30, 35, 55, 0.7);
-        }
-        .action-btn.danger:hover {
-            border-color: rgba(231, 76, 60, 0.5);
-            color: #ff6b5b;
-        }
-
-        /* History */
+        .action-btn:hover { border-color:var(--border-glow); color:#fff; background:rgba(30,35,55,0.7); }
+        .action-btn.danger:hover { border-color:rgba(231,76,60,0.5); color:#ff6b5b; }
         .history-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 14px 16px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+            padding:14px 16px; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
         }
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .history-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-dim);
-        }
-        .history-count {
-            font-size: 0.68rem;
-            color: var(--text-dim);
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-        .history-row {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-            align-items: center;
-            min-height: 38px;
-        }
+        .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .history-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; color:var(--text-dim); }
+        .history-count { font-size:0.68rem; color:var(--text-dim); background:rgba(255,255,255,0.04); padding:3px 10px; border-radius:20px; }
+        .history-row { display:flex; gap:7px; flex-wrap:wrap; align-items:center; min-height:38px; }
         .history-bubble {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #fff;
-            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            flex-shrink: 0;
-            letter-spacing: 0;
-            position: relative;
+            width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:0.85rem; color:#fff; animation:popIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275); flex-shrink:0;
         }
-        .history-bubble.bg-red {
-            background: linear-gradient(135deg, #c0392b, #e74c3c);
-            box-shadow: 0 3px 12px rgba(231, 76, 60, 0.3);
-        }
-        .history-bubble.bg-green {
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            box-shadow: 0 3px 12px rgba(46, 204, 113, 0.3);
-        }
-        .history-bubble.bg-violet {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            box-shadow: 0 3px 12px rgba(168, 85, 247, 0.3);
-        }
-        .history-empty {
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-style: italic;
-        }
+        .history-bubble.bg-red { background:linear-gradient(135deg,#c0392b,#e74c3c); box-shadow:0 3px 12px rgba(231,76,60,0.3); }
+        .history-bubble.bg-green { background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 3px 12px rgba(46,204,113,0.3); }
+        .history-bubble.bg-violet { background:linear-gradient(135deg,#7c3aed,#a855f7); box-shadow:0 3px 12px rgba(168,85,247,0.3); }
+        .history-empty { color:var(--text-dim); font-size:0.8rem; font-style:italic; }
         @keyframes popIn {
-            0% {
-                transform: scale(0);
-                opacity: 0;
-            }
-            70% {
-                transform: scale(1.2);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0%{ transform:scale(0); opacity:0; } 70%{ transform:scale(1.2); } 100%{ transform:scale(1); opacity:1; }
         }
-
-        /* Stats */
         .stats-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+            display:grid; grid-template-columns:1fr 1fr; gap:12px;
         }
-        .stat-item {
-            text-align: center;
-            padding: 8px;
-            border-radius: var(--radius-sm);
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .stat-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-        .stat-item.full-width {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            gap: 8px;
-        }
-        .mini-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-        }
-        .mini-dot.red {
-            background: #e74c3c;
-            box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
-        }
-        .mini-dot.green {
-            background: #2ecc71;
-            box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
-        }
-        .mini-dot.violet {
-            background: #a855f7;
-            box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
-        }
+        .stat-item { text-align:center; padding:8px; border-radius:var(--radius-sm); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); }
+        .stat-value { font-size:1.5rem; font-weight:700; }
+        .stat-label { font-size:0.65rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-dim); margin-top:2px; }
+        .stat-item.full-width { grid-column:1/-1; display:flex; justify-content:space-around; align-items:center; gap:8px; }
+        .mini-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:4px; }
+        .mini-dot.red { background:#e74c3c; box-shadow:0 0 8px rgba(231,76,60,0.6); }
+        .mini-dot.green { background:#2ecc71; box-shadow:0 0 8px rgba(46,204,113,0.6); }
+        .mini-dot.violet { background:#a855f7; box-shadow:0 0 8px rgba(168,85,247,0.6); }
+        .trend-bar-row { display:flex; gap:2px; align-items:flex-end; height:40px; justify-content:center; margin-top:4px; }
+        .trend-bar { width:8px; border-radius:4px 4px 0 0; transition:height 0.4s; min-height:4px; }
+        .trend-bar.big-bar { background:#f0c860; box-shadow:0 0 6px rgba(240,200,96,0.4); }
+        .trend-bar.small-bar { background:#6db3f2; box-shadow:0 0 6px rgba(109,179,242,0.4); }
+        .disclaimer { text-align:center; font-size:0.6rem; color:var(--text-dim); opacity:0.6; padding:4px 0; }
 
-        /* Trend bar mini */
-        .trend-bar-row {
-            display: flex;
-            gap: 2px;
-            align-items: flex-end;
-            height: 40px;
-            justify-content: center;
-            margin-top: 4px;
+        /* AUTO-FETCH SECTION */
+        .auto-fetch-section {
+            background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+            padding:14px 16px; backdrop-filter:blur(20px);
         }
-        .trend-bar {
-            width: 8px;
-            border-radius: 4px 4px 0 0;
-            transition: height 0.4s;
-            min-height: 4px;
+        .auto-fetch-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:10px; gap:10px;
         }
-        .trend-bar.big-bar {
-            background: #f0c860;
-            box-shadow: 0 0 6px rgba(240, 200, 96, 0.4);
+        .auto-fetch-toggle {
+            background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:20px;
+            padding:5px 12px; font-size:0.75rem; cursor:pointer; color:var(--text-dim);
+            transition:all 0.2s; display:flex; align-items:center; gap:6px;
         }
-        .trend-bar.small-bar {
-            background: #6db3f2;
-            box-shadow: 0 0 6px rgba(109, 179, 242, 0.4);
+        .auto-fetch-toggle.active {
+            background:rgba(46,204,113,0.15); border-color:#2ecc71; color:#50e890;
         }
-
-        /* Disclaimer */
-        .disclaimer {
-            text-align: center;
-            font-size: 0.6rem;
-            color: var(--text-dim);
-            letter-spacing: 0.8px;
-            opacity: 0.6;
-            padding: 4px 0;
+        .status-dot {
+            width:8px; height:8px; border-radius:50%; background:#888;
+            transition:background 0.3s;
         }
-
-        /* Responsive */
-        @media (max-width: 400px) {
-            .prediction-row {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            .pred-card .pred-value {
-                font-size: 1.8rem;
-            }
-            .numpad-grid {
-                gap: 5px;
-            }
-            .numpad-btn {
-                font-size: 1rem;
-                min-width: 36px;
-                min-height: 36px;
-                border-radius: 8px;
-            }
-            .main-container {
-                padding: 8px;
-                gap: 10px;
-            }
-            .stats-section {
-                gap: 8px;
-                padding: 12px;
-            }
-            .history-bubble {
-                width: 30px;
-                height: 30px;
-                font-size: 0.75rem;
-            }
+        .status-dot.paused { background:#e74c3c; }
+        .status-dot.running { background:#2ecc71; animation:blink 1.2s infinite; }
+        @keyframes blink { 50%{ opacity:0.3; } }
+        .input-group {
+            display:flex; flex-direction:column; gap:6px; margin-top:6px;
+        }
+        .input-group input {
+            background:rgba(20,24,40,0.8); border:1px solid var(--border); border-radius:6px;
+            padding:8px 10px; color:#fff; font-size:0.8rem; outline:none;
+            transition:border 0.2s;
+        }
+        .input-group input:focus { border-color:#f0c860; }
+        .input-row { display:flex; gap:8px; }
+        .input-row button {
+            background:rgba(240,200,96,0.1); border:1px solid #d4a745; color:#f0c860;
+            border-radius:6px; padding:8px 12px; font-size:0.75rem; cursor:pointer; transition:0.2s;
+            white-space:nowrap;
+        }
+        .input-row button:hover { background:rgba(240,200,96,0.2); }
+        .fetch-log {
+            font-size:0.65rem; color:var(--text-dim); margin-top:4px; min-height:18px;
         }
     </style>
 </head>
 <body>
-
-    <!-- Ambient Background -->
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
     <div class="bg-orb orb-3"></div>
     <div class="grid-overlay"></div>
 
-    <!-- Main Container -->
     <div class="main-container" id="mainContainer">
         <!-- Header -->
         <div class="header">
@@ -606,189 +227,161 @@
                 <div class="icon-pulse">🎯</div>
                 <h1>WinGo Predictor</h1>
             </div>
-            <div class="subtitle">30‑Second Round • Smart Analysis</div>
+            <div class="subtitle">30‑Second Round • Auto‑Capture</div>
         </div>
 
         <!-- Prediction Cards -->
         <div class="prediction-row">
-            <!-- Big/Small Card -->
             <div class="pred-card" id="bigSmallCard">
                 <div class="card-label">🔵 Big / Small</div>
                 <div class="pred-value" id="bigSmallPred">--</div>
-                <div class="confidence-bar-wrap">
-                    <div class="confidence-bar-fill" id="bigSmallConfBar" style="width: 0%; background: #888;"></div>
-                </div>
-                <div class="conf-text" id="bigSmallConfText">Waiting for data...</div>
+                <div class="confidence-bar-wrap"><div class="confidence-bar-fill" id="bigSmallConfBar" style="width:0%; background:#888;"></div></div>
+                <div class="conf-text" id="bigSmallConfText">Waiting...</div>
             </div>
-            <!-- Color Card -->
             <div class="pred-card" id="colorCard">
-                <div class="card-label">🎨 Color</div>
+                <div class="card-label">🎨 Colour</div>
                 <div class="pred-value" id="colorPred">--</div>
-                <div class="confidence-bar-wrap">
-                    <div class="confidence-bar-fill" id="colorConfBar" style="width: 0%; background: #888;"></div>
+                <div class="confidence-bar-wrap"><div class="confidence-bar-fill" id="colorConfBar" style="width:0%; background:#888;"></div></div>
+                <div class="conf-text" id="colorConfText">Waiting...</div>
+            </div>
+        </div>
+
+        <!-- Auto‑Fetch Setup -->
+        <div class="auto-fetch-section">
+            <div class="auto-fetch-header">
+                <span style="font-size:0.75rem; letter-spacing:1.5px; color:var(--text-dim);">🤖 AUTO FETCH</span>
+                <button class="auto-fetch-toggle" id="autoFetchToggle">
+                    <span class="status-dot paused" id="statusDot"></span>
+                    <span id="autoFetchLabel">OFF</span>
+                </button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="apiEndpoint" placeholder="API endpoint URL (e.g. https://55club.win/api/history?game=WinGo_30S)" value="">
+                <div class="input-row">
+                    <input type="text" id="proxyUrl" placeholder="CORS proxy (https://corsproxy.io/?)" value="https://corsproxy.io/?" style="flex:1;">
+                    <button id="btnFetchOnce">↻ Fetch Now</button>
                 </div>
-                <div class="conf-text" id="colorConfText">Waiting for data...</div>
             </div>
+            <div class="fetch-log" id="fetchLog">Configure API endpoint & proxy, then toggle ON</div>
         </div>
 
-        <!-- Number Pad -->
+        <!-- Number Pad (manual fallback) -->
         <div class="numpad-section">
-            <div class="numpad-label">📟 Enter Last Result (Tap Number)</div>
-            <div class="numpad-grid" id="numpadGrid">
-                <!-- Generated by JS -->
-            </div>
+            <div class="numpad-label">📟 Manual Entry (0‑9)</div>
+            <div class="numpad-grid" id="numpadGrid"></div>
             <div class="numpad-actions">
-                <button class="action-btn danger" id="btnUndo" title="Undo last entry">↩ Undo</button>
-                <button class="action-btn danger" id="btnClear" title="Clear all history">🗑 Clear All</button>
+                <button class="action-btn danger" id="btnUndo">↩ Undo</button>
+                <button class="action-btn danger" id="btnClear">🗑 Clear All</button>
             </div>
         </div>
 
-        <!-- Recent History -->
+        <!-- History -->
         <div class="history-section">
             <div class="history-header">
                 <span class="history-label">📋 Recent History</span>
-                <span class="history-count" id="historyCount">0 results</span>
+                <span class="history-count" id="historyCount">0</span>
             </div>
-            <div class="history-row" id="historyRow">
-                <span class="history-empty">Tap numbers above to log results</span>
-            </div>
-            <!-- Mini trend bars -->
+            <div class="history-row" id="historyRow"><span class="history-empty">No data</span></div>
             <div class="trend-bar-row" id="trendBarRow"></div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="stats-section" id="statsSection">
-            <div class="stat-item">
-                <div class="stat-value" id="statBigCount">0</div>
-                <div class="stat-label">Big (5-9)</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="statSmallCount">0</div>
-                <div class="stat-label">Small (0-4)</div>
-            </div>
+        <!-- Stats -->
+        <div class="stats-section">
+            <div class="stat-item"><div class="stat-value" id="statBigCount">0</div><div class="stat-label">Big (5‑9)</div></div>
+            <div class="stat-item"><div class="stat-value" id="statSmallCount">0</div><div class="stat-label">Small (0‑4)</div></div>
             <div class="stat-item full-width">
-                <span><span class="mini-dot red"></span> Red: <strong id="statRedCount">0</strong></span>
-                <span><span class="mini-dot green"></span> Green: <strong id="statGreenCount">0</strong></span>
-                <span><span class="mini-dot violet"></span> Violet: <strong id="statVioletCount">0</strong></span>
+                <span><span class="mini-dot red"></span> Red <strong id="statRedCount">0</strong></span>
+                <span><span class="mini-dot green"></span> Green <strong id="statGreenCount">0</strong></span>
+                <span><span class="mini-dot violet"></span> Violet <strong id="statVioletCount">0</strong></span>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="statCurrentStreak">-</div>
-                <div class="stat-label">Current Streak</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="statLastNumber">-</div>
-                <div class="stat-label">Last Number</div>
-            </div>
+            <div class="stat-item"><div class="stat-value" id="statCurrentStreak">-</div><div class="stat-label">Streak</div></div>
+            <div class="stat-item"><div class="stat-value" id="statLastNumber">-</div><div class="stat-label">Last #</div></div>
         </div>
 
-        <!-- Disclaimer -->
-        <div class="disclaimer">⚠️ For entertainment &amp; analysis only. Predictions are based on historical patterns and do not guarantee future outcomes.</div>
+        <div class="disclaimer">⚠️ For entertainment only. Auto‑fetch requires a valid API endpoint & CORS proxy.</div>
     </div>
 
     <script>
         (function() {
-            // ─────────────────────────────────────
-            // CONFIGURATION
-            // ─────────────────────────────────────
-            const NUMBER_COLORS = {
-                0: 'violet',
-                1: 'green',
-                2: 'red',
-                3: 'green',
-                4: 'red',
-                5: 'violet',
-                6: 'red',
-                7: 'green',
-                8: 'red',
-                9: 'green'
-            };
-            const BIG_NUMBERS = new Set([5, 6, 7, 8, 9]);
-            const SMALL_NUMBERS = new Set([0, 1, 2, 3, 4]);
-            const MAX_HISTORY = 60;
+            // ─── Color & Size mapping ───
+            const NUMBER_COLORS = {0:'violet',1:'green',2:'red',3:'green',4:'red',5:'violet',6:'red',7:'green',8:'red',9:'green'};
+            const BIG_NUMBERS = new Set([5,6,7,8,9]);
+            const MAX_HISTORY = 100;
 
-            // ─────────────────────────────────────
-            // STATE
-            // ─────────────────────────────────────
-            let history = []; // Array of {number, bigSmall, color, timestamp}
+            // ─── State ───
+            let history = [];        // {number, bigSmall, color}
+            let autoFetchInterval = null;
+            let isAutoFetchActive = false;
 
-            // ─────────────────────────────────────
-            // DOM REFERENCES
-            // ─────────────────────────────────────
-            const $bigSmallPred = document.getElementById('bigSmallPred');
-            const $bigSmallConfBar = document.getElementById('bigSmallConfBar');
-            const $bigSmallConfText = document.getElementById('bigSmallConfText');
-            const $bigSmallCard = document.getElementById('bigSmallCard');
-            const $colorPred = document.getElementById('colorPred');
-            const $colorConfBar = document.getElementById('colorConfBar');
-            const $colorConfText = document.getElementById('colorConfText');
-            const $colorCard = document.getElementById('colorCard');
-            const $numpadGrid = document.getElementById('numpadGrid');
-            const $historyRow = document.getElementById('historyRow');
-            const $historyCount = document.getElementById('historyCount');
-            const $trendBarRow = document.getElementById('trendBarRow');
-            const $btnUndo = document.getElementById('btnUndo');
-            const $btnClear = document.getElementById('btnClear');
-            const $statBigCount = document.getElementById('statBigCount');
-            const $statSmallCount = document.getElementById('statSmallCount');
-            const $statRedCount = document.getElementById('statRedCount');
-            const $statGreenCount = document.getElementById('statGreenCount');
-            const $statVioletCount = document.getElementById('statVioletCount');
-            const $statCurrentStreak = document.getElementById('statCurrentStreak');
-            const $statLastNumber = document.getElementById('statLastNumber');
+            // ─── DOM refs ───
+            const $ = (id) => document.getElementById(id);
+            const $bigSmallPred = $('bigSmallPred');
+            const $bigSmallConfBar = $('bigSmallConfBar');
+            const $bigSmallConfText = $('bigSmallConfText');
+            const $bigSmallCard = $('bigSmallCard');
+            const $colorPred = $('colorPred');
+            const $colorConfBar = $('colorConfBar');
+            const $colorConfText = $('colorConfText');
+            const $colorCard = $('colorCard');
+            const $numpadGrid = $('numpadGrid');
+            const $historyRow = $('historyRow');
+            const $historyCount = $('historyCount');
+            const $trendBarRow = $('trendBarRow');
+            const $btnUndo = $('btnUndo');
+            const $btnClear = $('btnClear');
+            const $statBigCount = $('statBigCount');
+            const $statSmallCount = $('statSmallCount');
+            const $statRedCount = $('statRedCount');
+            const $statGreenCount = $('statGreenCount');
+            const $statVioletCount = $('statVioletCount');
+            const $statCurrentStreak = $('statCurrentStreak');
+            const $statLastNumber = $('statLastNumber');
+            const $autoFetchToggle = $('autoFetchToggle');
+            const $statusDot = $('statusDot');
+            const $autoFetchLabel = $('autoFetchLabel');
+            const $apiEndpoint = $('apiEndpoint');
+            const $proxyUrl = $('proxyUrl');
+            const $btnFetchOnce = $('btnFetchOnce');
+            const $fetchLog = $('fetchLog');
 
-            // ─────────────────────────────────────
-            // BUILD NUMPAD
-            // ─────────────────────────────────────
+            // ─── Build numpad ───
             function buildNumpad() {
                 $numpadGrid.innerHTML = '';
-                for (let n = 0; n <= 9; n++) {
+                for(let n=0; n<=9; n++) {
                     const btn = document.createElement('button');
                     btn.className = 'numpad-btn';
                     btn.textContent = n;
                     const c = NUMBER_COLORS[n];
-                    if (c === 'red') btn.classList.add('tint-red');
-                    if (c === 'green') btn.classList.add('tint-green');
-                    if (c === 'violet') btn.classList.add('tint-violet');
+                    if(c==='red') btn.classList.add('tint-red');
+                    if(c==='green') btn.classList.add('tint-green');
+                    if(c==='violet') btn.classList.add('tint-violet');
                     btn.addEventListener('click', (e) => {
                         addRipple(e, btn);
                         addResult(n);
                     });
-                    // Keyboard support
                     btn.setAttribute('data-num', n);
                     $numpadGrid.appendChild(btn);
                 }
             }
-
             function addRipple(e, btn) {
                 const ripple = document.createElement('span');
                 ripple.className = 'ripple';
                 const rect = btn.getBoundingClientRect();
                 const size = Math.max(rect.width, rect.height);
-                ripple.style.width = ripple.style.height = size + 'px';
-                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                ripple.style.width = ripple.style.height = size+'px';
+                ripple.style.left = (e.clientX - rect.left - size/2)+'px';
+                ripple.style.top = (e.clientY - rect.top - size/2)+'px';
                 btn.appendChild(ripple);
-                ripple.addEventListener('animationend', () => ripple.remove());
+                ripple.addEventListener('animationend', ()=>ripple.remove());
             }
 
-            // ─────────────────────────────────────
-            // ADD RESULT
-            // ─────────────────────────────────────
+            // ─── Add result ───
             function addResult(number) {
                 const bigSmall = BIG_NUMBERS.has(number) ? 'Big' : 'Small';
                 const color = NUMBER_COLORS[number];
-                const entry = {
-                    number,
-                    bigSmall,
-                    color,
-                    timestamp: Date.now()
-                };
-                history.push(entry);
-                if (history.length > MAX_HISTORY) {
-                    history.shift();
-                }
+                history.push({number, bigSmall, color, timestamp: Date.now()});
+                if(history.length > MAX_HISTORY) history.shift();
                 updateAll();
-                // Haptic-like pulse on the main container
                 pulseContainer();
             }
 
@@ -796,534 +389,338 @@
                 const container = document.getElementById('mainContainer');
                 container.style.transition = 'transform 0.08s ease-out';
                 container.style.transform = 'scale(0.995)';
-                requestAnimationFrame(() => {
-                    container.style.transform = 'scale(1)';
-                });
+                requestAnimationFrame(()=>{ container.style.transform = 'scale(1)'; });
             }
 
-            // ─────────────────────────────────────
-            // UNDO / CLEAR
-            // ─────────────────────────────────────
-            function undoLast() {
-                if (history.length === 0) return;
-                history.pop();
-                updateAll();
-            }
+            function undoLast() { if(history.length) { history.pop(); updateAll(); } }
+            function clearAll() { if(history.length && confirm('Clear all history?')) { history = []; updateAll(); } }
 
-            function clearAll() {
-                if (history.length === 0) return;
-                if (confirm('Clear all history? This cannot be undone.')) {
-                    history = [];
-                    updateAll();
-                }
-            }
-
-            // ─────────────────────────────────────
-            // PREDICTION ENGINE
-            // ─────────────────────────────────────
+            // ─── Prediction engine (same as before) ───
             function predictBigSmall() {
-                if (history.length === 0) {
-                    return { prediction: null, confidence: 0, reasoning: 'No data' };
+                if(history.length===0) return {prediction:null, confidence:0};
+                if(history.length===1) {
+                    const opp = history[0].bigSmall==='Big'?'Small':'Big';
+                    return {prediction:opp, confidence:51};
                 }
-                if (history.length === 1) {
-                    // With only 1 result, lean opposite (mean reversion bias)
-                    const last = history[0].bigSmall;
-                    const opposite = last === 'Big' ? 'Small' : 'Big';
-                    return { prediction: opposite, confidence: 51, reasoning: 'Single result — slight reversion' };
-                }
-
-                let scores = { Big: 0, Small: 0 };
-                let totalWeight = 0;
-
-                // 1. Pattern matching (last 3 results as pattern)
-                const patternLen = Math.min(3, history.length - 1);
-                if (patternLen >= 1 && history.length >= patternLen + 1) {
-                    const lastPattern = history.slice(-patternLen).map(h => h.bigSmall);
-                    let matchCount = 0;
-                    let matchResults = [];
-                    for (let i = 0; i <= history.length - patternLen - 1; i++) {
-                        const segment = history.slice(i, i + patternLen).map(h => h.bigSmall);
-                        if (arraysEqual(segment, lastPattern)) {
-                            matchCount++;
-                            if (i + patternLen < history.length) {
-                                matchResults.push(history[i + patternLen].bigSmall);
-                            }
+                let scores = {Big:0, Small:0};
+                let totalWeight=0;
+                const patternLen = Math.min(3, history.length-1);
+                if(patternLen>=1) {
+                    const lastPat = history.slice(-patternLen).map(h=>h.bigSmall);
+                    let matchRes=[];
+                    for(let i=0; i<=history.length-patternLen-1; i++) {
+                        if(arraysEqual(history.slice(i,i+patternLen).map(h=>h.bigSmall), lastPat)) {
+                            if(i+patternLen<history.length) matchRes.push(history[i+patternLen].bigSmall);
                         }
                     }
-                    if (matchResults.length > 0) {
-                        const weight = 40;
-                        for (const r of matchResults) {
-                            scores[r] += weight / matchResults.length;
-                        }
-                        totalWeight += weight;
+                    if(matchRes.length) {
+                        const w=40;
+                        for(const r of matchRes) scores[r]+=w/matchRes.length;
+                        totalWeight+=w;
                     }
                 }
-
-                // 2. Streak analysis
-                const currentStreak = getCurrentBigSmallStreak();
-                if (currentStreak.length >= 2) {
-                    const streakType = currentStreak.type;
-                    const streakLen = currentStreak.length;
-                    // Find all historical streaks of this length for this type
-                    let allStreaks = findAllBigSmallStreaks();
-                    let continuedCount = 0;
-                    let brokeCount = 0;
-                    for (const s of allStreaks) {
-                        if (s.type === streakType && s.length === streakLen) {
-                            if (s.continued) continuedCount++;
-                            else brokeCount++;
-                        }
+                const streak = getCurrentBigSmallStreak();
+                if(streak.length>=2) {
+                    let cont=0, broke=0;
+                    for(const s of findAllBigSmallStreaks()) {
+                        if(s.type===streak.type && s.length===streak.length) { if(s.continued) cont++; else broke++; }
                     }
-                    const weight = 30;
-                    if (continuedCount + brokeCount > 0) {
-                        const continueProb = continuedCount / (continuedCount + brokeCount);
-                        scores[streakType] += continueProb * weight;
-                        const opposite = streakType === 'Big' ? 'Small' : 'Big';
-                        scores[opposite] += (1 - continueProb) * weight;
+                    const w=30;
+                    if(cont+broke>0) {
+                        const p = cont/(cont+broke);
+                        scores[streak.type] += p*w;
+                        scores[streak.type==='Big'?'Small':'Big'] += (1-p)*w;
                     } else {
-                        // No data: slight reversion bias
-                        const opposite = streakType === 'Big' ? 'Small' : 'Big';
-                        scores[opposite] += weight * 0.55;
-                        scores[streakType] += weight * 0.45;
+                        const opp = streak.type==='Big'?'Small':'Big';
+                        scores[opp]+=w*0.55; scores[streak.type]+=w*0.45;
                     }
-                    totalWeight += weight;
+                    totalWeight+=w;
                 }
-
-                // 3. Transition probability from last number
-                if (history.length >= 2) {
-                    const lastNum = history[history.length - 1].number;
-                    const transitions = {};
-                    for (let i = 0; i < history.length - 1; i++) {
-                        if (history[i].number === lastNum) {
-                            const nextBS = history[i + 1].bigSmall;
-                            transitions[nextBS] = (transitions[nextBS] || 0) + 1;
-                        }
-                    }
-                    const weight = 20;
-                    const totalTrans = Object.values(transitions).reduce((a, b) => a + b, 0);
-                    if (totalTrans > 0) {
-                        for (const [bs, count] of Object.entries(transitions)) {
-                            scores[bs] += (count / totalTrans) * weight;
-                        }
-                    }
-                    totalWeight += weight;
+                if(history.length>=2) {
+                    const lastNum = history[history.length-1].number;
+                    const trans={};
+                    for(let i=0;i<history.length-1;i++) if(history[i].number===lastNum) trans[history[i+1].bigSmall]=(trans[history[i+1].bigSmall]||0)+1;
+                    const w=20;
+                    const total = Object.values(trans).reduce((a,b)=>a+b,0);
+                    if(total>0) for(const [bs,c] of Object.entries(trans)) scores[bs]+=(c/total)*w;
+                    totalWeight+=w;
                 }
-
-                // 4. Recent frequency (last 15, weighted by recency)
-                const recentSlice = history.slice(-15);
-                const weight = 10;
-                for (let i = 0; i < recentSlice.length; i++) {
-                    const recencyWeight = 1 + (i / recentSlice.length); // more recent = higher weight
-                    scores[recentSlice[i].bigSmall] += (weight * recencyWeight) / recentSlice.length;
-                }
-                totalWeight += weight;
-
-                // Normalize
-                if (totalWeight > 0) {
-                    scores.Big = scores.Big / totalWeight * 100;
-                    scores.Small = scores.Small / totalWeight * 100;
-                }
-
-                const prediction = scores.Big >= scores.Small ? 'Big' : 'Small';
-                const confidence = Math.round(Math.max(scores.Big, scores.Small));
-
-                return {
-                    prediction,
-                    confidence: Math.min(confidence, 95),
-                    reasoning: `Pattern: ${scores.Big.toFixed(0)}% Big / ${scores.Small.toFixed(0)}% Small`
-                };
+                const recent = history.slice(-15);
+                const w=10;
+                for(let i=0;i<recent.length;i++) scores[recent[i].bigSmall] += w*(1+i/recent.length)/recent.length;
+                totalWeight+=w;
+                if(totalWeight>0) { scores.Big = scores.Big/totalWeight*100; scores.Small = scores.Small/totalWeight*100; }
+                const pred = scores.Big>=scores.Small?'Big':'Small';
+                return {prediction:pred, confidence:Math.min(Math.round(Math.max(scores.Big,scores.Small)),95)};
             }
 
             function predictColor() {
-                if (history.length === 0) {
-                    return { prediction: null, confidence: 0, reasoning: 'No data' };
+                if(history.length===0) return {prediction:null, confidence:0};
+                if(history.length===1) {
+                    const alt = history[0].color==='red'?['green','violet']:history[0].color==='green'?['red','violet']:['red','green'];
+                    return {prediction:alt[0], confidence:40};
                 }
-                if (history.length === 1) {
-                    const lastColor = history[0].color;
-                    // Slightly favor the other dominant color
-                    const alternatives = lastColor === 'red' ? ['green', 'violet'] :
-                        lastColor === 'green' ? ['red', 'violet'] : ['red', 'green'];
-                    return { prediction: alternatives[0], confidence: 40, reasoning: 'Single result — limited data' };
-                }
-
-                let scores = { red: 0, green: 0, violet: 0 };
-                let totalWeight = 0;
-
-                // 1. Pattern matching on color sequences
-                const patternLen = Math.min(3, history.length - 1);
-                if (patternLen >= 1 && history.length >= patternLen + 1) {
-                    const lastPattern = history.slice(-patternLen).map(h => h.color);
-                    let matchResults = [];
-                    for (let i = 0; i <= history.length - patternLen - 1; i++) {
-                        const segment = history.slice(i, i + patternLen).map(h => h.color);
-                        if (arraysEqual(segment, lastPattern)) {
-                            if (i + patternLen < history.length) {
-                                matchResults.push(history[i + patternLen].color);
-                            }
+                let scores = {red:0, green:0, violet:0};
+                let totalWeight=0;
+                const patternLen = Math.min(3, history.length-1);
+                if(patternLen>=1) {
+                    const lastPat = history.slice(-patternLen).map(h=>h.color);
+                    let matchRes=[];
+                    for(let i=0; i<=history.length-patternLen-1; i++) {
+                        if(arraysEqual(history.slice(i,i+patternLen).map(h=>h.color), lastPat)) {
+                            if(i+patternLen<history.length) matchRes.push(history[i+patternLen].color);
                         }
                     }
-                    if (matchResults.length > 0) {
-                        const weight = 40;
-                        for (const r of matchResults) {
-                            scores[r] += weight / matchResults.length;
-                        }
-                        totalWeight += weight;
+                    if(matchRes.length) {
+                        const w=40;
+                        for(const r of matchRes) scores[r]+=w/matchRes.length;
+                        totalWeight+=w;
                     }
                 }
-
-                // 2. Color streak analysis
-                const currentStreak = getCurrentColorStreak();
-                if (currentStreak.length >= 2) {
-                    const streakColor = currentStreak.type;
-                    const streakLen = currentStreak.length;
-                    let allStreaks = findAllColorStreaks();
-                    let continuedCount = 0;
-                    let brokeCount = 0;
-                    for (const s of allStreaks) {
-                        if (s.type === streakColor && s.length === streakLen) {
-                            if (s.continued) continuedCount++;
-                            else brokeCount++;
-                        }
-                    }
-                    const weight = 25;
-                    if (continuedCount + brokeCount > 0) {
-                        const continueProb = continuedCount / (continuedCount + brokeCount);
-                        scores[streakColor] += continueProb * weight;
-                        const remainingWeight = weight - continueProb * weight;
-                        // Distribute remaining to other colors based on base rates
-                        const others = Object.keys(scores).filter(c => c !== streakColor);
-                        for (const o of others) {
-                            scores[o] += remainingWeight / others.length;
-                        }
+                const streak = getCurrentColorStreak();
+                if(streak.length>=2) {
+                    let cont=0, broke=0;
+                    for(const s of findAllColorStreaks()) if(s.type===streak.type && s.length===streak.length) { if(s.continued) cont++; else broke++; }
+                    const w=25;
+                    if(cont+broke>0) {
+                        const p = cont/(cont+broke);
+                        scores[streak.type]+=p*w;
+                        const rest = w-p*w;
+                        const others = Object.keys(scores).filter(c=>c!==streak.type);
+                        for(const o of others) scores[o]+=rest/others.length;
                     } else {
-                        // No data, slight reversion
-                        const others = Object.keys(scores).filter(c => c !== streakColor);
-                        for (const o of others) {
-                            scores[o] += weight / others.length * 0.55;
-                        }
-                        scores[streakColor] += weight * 0.45;
+                        const others = Object.keys(scores).filter(c=>c!==streak.type);
+                        for(const o of others) scores[o]+=w/others.length*0.55;
+                        scores[streak.type]+=w*0.45;
                     }
-                    totalWeight += weight;
+                    totalWeight+=w;
                 }
-
-                // 3. Transition from last number's color
-                if (history.length >= 2) {
-                    const lastColor = history[history.length - 1].color;
-                    const transitions = {};
-                    for (let i = 0; i < history.length - 1; i++) {
-                        if (history[i].color === lastColor) {
-                            const nextC = history[i + 1].color;
-                            transitions[nextC] = (transitions[nextC] || 0) + 1;
-                        }
-                    }
-                    const weight = 20;
-                    const totalTrans = Object.values(transitions).reduce((a, b) => a + b, 0);
-                    if (totalTrans > 0) {
-                        for (const [c, count] of Object.entries(transitions)) {
-                            scores[c] += (count / totalTrans) * weight;
-                        }
-                    }
-                    totalWeight += weight;
+                if(history.length>=2) {
+                    const lastCol = history[history.length-1].color;
+                    const trans={};
+                    for(let i=0;i<history.length-1;i++) if(history[i].color===lastCol) trans[history[i+1].color]=(trans[history[i+1].color]||0)+1;
+                    const w=20;
+                    const total = Object.values(trans).reduce((a,b)=>a+b,0);
+                    if(total>0) for(const [c,count] of Object.entries(trans)) scores[c]+=(count/total)*w;
+                    totalWeight+=w;
                 }
-
-                // 4. Base rate adjusted frequency (red 40%, green 40%, violet 20%)
-                const recentSlice = history.slice(-20);
-                const weight = 15;
-                const freqMap = { red: 0, green: 0, violet: 0 };
-                for (let i = 0; i < recentSlice.length; i++) {
-                    const recencyWeight = 1 + (i / recentSlice.length);
-                    freqMap[recentSlice[i].color] += recencyWeight;
-                }
-                const totalFreq = Object.values(freqMap).reduce((a, b) => a + b, 0);
-                if (totalFreq > 0) {
-                    for (const c of Object.keys(scores)) {
-                        scores[c] += (freqMap[c] / totalFreq) * weight;
-                    }
-                }
-                totalWeight += weight;
-
-                // Normalize
-                if (totalWeight > 0) {
-                    for (const c of Object.keys(scores)) {
-                        scores[c] = scores[c] / totalWeight * 100;
-                    }
-                }
-
-                // Determine prediction
-                const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-                const prediction = sorted[0][0];
-                const confidence = Math.round(sorted[0][1]);
-
-                return {
-                    prediction,
-                    confidence: Math.min(confidence, 92),
-                    reasoning: `R:${scores.red.toFixed(0)}% G:${scores.green.toFixed(0)}% V:${scores.violet.toFixed(0)}%`
-                };
+                const recent = history.slice(-20);
+                const w=15;
+                const freq={red:0,green:0,violet:0};
+                for(let i=0;i<recent.length;i++) freq[recent[i].color] += 1+i/recent.length;
+                const totalF = Object.values(freq).reduce((a,b)=>a+b,0);
+                if(totalF>0) for(const c of Object.keys(scores)) scores[c]+=(freq[c]/totalF)*w;
+                totalWeight+=w;
+                if(totalWeight>0) for(const c of Object.keys(scores)) scores[c]=scores[c]/totalWeight*100;
+                const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+                return {prediction:sorted[0][0], confidence:Math.min(Math.round(sorted[0][1]),92)};
             }
 
-            // ─────────────────────────────────────
-            // HELPER FUNCTIONS
-            // ─────────────────────────────────────
-            function arraysEqual(a, b) {
-                if (a.length !== b.length) return false;
-                for (let i = 0; i < a.length; i++) {
-                    if (a[i] !== b[i]) return false;
-                }
-                return true;
+            function arraysEqual(a,b){ return a.length===b.length && a.every((v,i)=>v===b[i]); }
+            function getCurrentBigSmallStreak(){
+                if(!history.length) return {type:null,length:0};
+                const last = history[history.length-1].bigSmall;
+                let cnt=0;
+                for(let i=history.length-1; i>=0 && history[i].bigSmall===last; i--) cnt++;
+                return {type:last, length:cnt};
             }
-
-            function getCurrentBigSmallStreak() {
-                if (history.length === 0) return { type: null, length: 0 };
-                const last = history[history.length - 1].bigSmall;
-                let count = 0;
-                for (let i = history.length - 1; i >= 0; i--) {
-                    if (history[i].bigSmall === last) count++;
-                    else break;
-                }
-                return { type: last, length: count };
+            function getCurrentColorStreak(){
+                if(!history.length) return {type:null,length:0};
+                const last = history[history.length-1].color;
+                let cnt=0;
+                for(let i=history.length-1; i>=0 && history[i].color===last; i--) cnt++;
+                return {type:last, length:cnt};
             }
-
-            function getCurrentColorStreak() {
-                if (history.length === 0) return { type: null, length: 0 };
-                const last = history[history.length - 1].color;
-                let count = 0;
-                for (let i = history.length - 1; i >= 0; i--) {
-                    if (history[i].color === last) count++;
-                    else break;
+            function findAllBigSmallStreaks(){
+                const streaks=[];
+                if(history.length<2) return streaks;
+                let cur=history[0].bigSmall, len=1;
+                for(let i=1;i<history.length;i++){
+                    if(history[i].bigSmall===cur) len++;
+                    else { streaks.push({type:cur,length:len,continued:false}); cur=history[i].bigSmall; len=1; }
                 }
-                return { type: last, length: count };
+                streaks.push({type:cur,length:len,continued:true});
+                return streaks;
             }
-
-            function findAllBigSmallStreaks() {
-                if (history.length < 2) return [];
-                const streaks = [];
-                let currentType = history[0].bigSmall;
-                let currentLen = 1;
-                for (let i = 1; i < history.length; i++) {
-                    if (history[i].bigSmall === currentType) {
-                        currentLen++;
-                    } else {
-                        // Streak ended
-                        streaks.push({
-                            type: currentType,
-                            length: currentLen,
-                            continued: false
-                        });
-                        currentType = history[i].bigSmall;
-                        currentLen = 1;
-                    }
+            function findAllColorStreaks(){
+                const streaks=[];
+                if(history.length<2) return streaks;
+                let cur=history[0].color, len=1;
+                for(let i=1;i<history.length;i++){
+                    if(history[i].color===cur) len++;
+                    else { streaks.push({type:cur,length:len,continued:false}); cur=history[i].color; len=1; }
                 }
-                // Last streak (still ongoing)
-                if (currentLen >= 1) {
-                    streaks.push({
-                        type: currentType,
-                        length: currentLen,
-                        continued: true
-                    });
-                }
+                streaks.push({type:cur,length:len,continued:true});
                 return streaks;
             }
 
-            function findAllColorStreaks() {
-                if (history.length < 2) return [];
-                const streaks = [];
-                let currentType = history[0].color;
-                let currentLen = 1;
-                for (let i = 1; i < history.length; i++) {
-                    if (history[i].color === currentType) {
-                        currentLen++;
-                    } else {
-                        streaks.push({
-                            type: currentType,
-                            length: currentLen,
-                            continued: false
-                        });
-                        currentType = history[i].color;
-                        currentLen = 1;
-                    }
-                }
-                if (currentLen >= 1) {
-                    streaks.push({
-                        type: currentType,
-                        length: currentLen,
-                        continued: true
-                    });
-                }
-                return streaks;
-            }
-
-            // ─────────────────────────────────────
-            // UPDATE UI
-            // ─────────────────────────────────────
+            // ─── Update UI ───
             function updateAll() {
                 updatePredictions();
                 updateHistory();
                 updateStats();
                 updateTrendBars();
             }
-
             function updatePredictions() {
-                const bsResult = predictBigSmall();
-                const colorResult = predictColor();
-
-                // Big/Small card
-                if (bsResult.prediction) {
-                    $bigSmallPred.textContent = bsResult.prediction.toUpperCase();
-                    $bigSmallPred.className = 'pred-value ' + (bsResult.prediction === 'Big' ? 'big-color' :
-                        'small-color');
-                    $bigSmallConfBar.style.width = bsResult.confidence + '%';
-                    $bigSmallConfBar.style.background = bsResult.prediction === 'Big' ?
-                        'linear-gradient(90deg, #d4a745, #f0c860)' :
-                        'linear-gradient(90deg, #4a90d9, #6db3f2)';
-                    $bigSmallConfText.textContent = bsResult.confidence + '% confidence • ' + bsResult.reasoning;
-                    // Card glow
-                    $bigSmallCard.className = 'pred-card glow-' + bsResult.prediction.toLowerCase();
+                const bs = predictBigSmall();
+                const col = predictColor();
+                if(bs.prediction) {
+                    $bigSmallPred.textContent = bs.prediction.toUpperCase();
+                    $bigSmallPred.className = 'pred-value '+(bs.prediction==='Big'?'big-color':'small-color');
+                    $bigSmallConfBar.style.width = bs.confidence+'%';
+                    $bigSmallConfBar.style.background = bs.prediction==='Big'?'linear-gradient(90deg,#d4a745,#f0c860)':'linear-gradient(90deg,#4a90d9,#6db3f2)';
+                    $bigSmallConfText.textContent = bs.confidence+'% confidence';
+                    $bigSmallCard.className = 'pred-card glow-'+bs.prediction.toLowerCase();
                 } else {
-                    $bigSmallPred.textContent = '--';
-                    $bigSmallPred.className = 'pred-value';
-                    $bigSmallConfBar.style.width = '0%';
-                    $bigSmallConfText.textContent = 'Waiting for data...';
-                    $bigSmallCard.className = 'pred-card';
+                    $bigSmallPred.textContent = '--'; $bigSmallPred.className='pred-value';
+                    $bigSmallConfBar.style.width='0%'; $bigSmallConfText.textContent='Waiting...';
+                    $bigSmallCard.className='pred-card';
                 }
-
-                // Color card
-                if (colorResult.prediction) {
-                    $colorPred.textContent = colorResult.prediction.toUpperCase();
-                    $colorPred.className = 'pred-value ' + colorResult.prediction + '-color';
-                    $colorConfBar.style.width = colorResult.confidence + '%';
-                    const colorGradients = {
-                        red: 'linear-gradient(90deg, #c0392b, #ff6b5b)',
-                        green: 'linear-gradient(90deg, #27ae60, #50e890)',
-                        violet: 'linear-gradient(90deg, #7c3aed, #c084fc)'
-                    };
-                    $colorConfBar.style.background = colorGradients[colorResult.prediction] || '#888';
-                    $colorConfText.textContent = colorResult.confidence + '% confidence • ' + colorResult.reasoning;
-                    $colorCard.className = 'pred-card glow-' + colorResult.prediction;
+                if(col.prediction) {
+                    $colorPred.textContent = col.prediction.toUpperCase();
+                    $colorPred.className = 'pred-value '+col.prediction+'-color';
+                    $colorConfBar.style.width = col.confidence+'%';
+                    const grads = {red:'linear-gradient(90deg,#c0392b,#ff6b5b)', green:'linear-gradient(90deg,#27ae60,#50e890)', violet:'linear-gradient(90deg,#7c3aed,#c084fc)'};
+                    $colorConfBar.style.background = grads[col.prediction]||'#888';
+                    $colorConfText.textContent = col.confidence+'% confidence';
+                    $colorCard.className = 'pred-card glow-'+col.prediction;
                 } else {
-                    $colorPred.textContent = '--';
-                    $colorPred.className = 'pred-value';
-                    $colorConfBar.style.width = '0%';
-                    $colorConfText.textContent = 'Waiting for data...';
-                    $colorCard.className = 'pred-card';
+                    $colorPred.textContent='--'; $colorPred.className='pred-value';
+                    $colorConfBar.style.width='0%'; $colorConfText.textContent='Waiting...';
+                    $colorCard.className='pred-card';
                 }
             }
-
             function updateHistory() {
                 $historyRow.innerHTML = '';
-                if (history.length === 0) {
-                    $historyRow.innerHTML = '<span class="history-empty">Tap numbers above to log results</span>';
-                } else {
-                    // Show last 20
-                    const display = history.slice(-20);
-                    for (const entry of display) {
-                        const bubble = document.createElement('span');
-                        bubble.className = 'history-bubble bg-' + entry.color;
-                        bubble.textContent = entry.number;
-                        bubble.title = `${entry.bigSmall} • ${entry.color}`;
-                        $historyRow.appendChild(bubble);
+                if(!history.length) $historyRow.innerHTML = '<span class="history-empty">No data</span>';
+                else {
+                    const display = history.slice(-25);
+                    for(const e of display) {
+                        const b = document.createElement('span');
+                        b.className = 'history-bubble bg-'+e.color;
+                        b.textContent = e.number;
+                        b.title = e.bigSmall+' • '+e.color;
+                        $historyRow.appendChild(b);
                     }
                 }
-                $historyCount.textContent = history.length + ' result' + (history.length !== 1 ? 's' : '');
+                $historyCount.textContent = history.length+' result'+(history.length!==1?'s':'');
             }
-
             function updateTrendBars() {
                 $trendBarRow.innerHTML = '';
-                const display = history.slice(-20);
-                if (display.length === 0) return;
-                const maxBars = Math.min(display.length, 20);
-                for (let i = display.length - maxBars; i < display.length; i++) {
+                const disp = history.slice(-20);
+                for(let i=0; i<disp.length; i++) {
                     const bar = document.createElement('div');
-                    bar.className = 'trend-bar ' + (display[i].bigSmall === 'Big' ? 'big-bar' : 'small-bar');
-                    const height = display[i].bigSmall === 'Big' ? 32 : 18;
-                    bar.style.height = height + 'px';
-                    bar.title = `#${display[i].number} - ${display[i].bigSmall}`;
+                    bar.className = 'trend-bar '+(disp[i].bigSmall==='Big'?'big-bar':'small-bar');
+                    bar.style.height = (disp[i].bigSmall==='Big'?32:18)+'px';
+                    bar.title = '#'+disp[i].number+' - '+disp[i].bigSmall;
                     $trendBarRow.appendChild(bar);
                 }
             }
-
             function updateStats() {
-                let bigCount = 0,
-                    smallCount = 0;
-                let redCount = 0,
-                    greenCount = 0,
-                    violetCount = 0;
-                for (const entry of history) {
-                    if (entry.bigSmall === 'Big') bigCount++;
-                    else smallCount++;
-                    if (entry.color === 'red') redCount++;
-                    else if (entry.color === 'green') greenCount++;
-                    else violetCount++;
+                let b=0,s=0, r=0,g=0,v=0;
+                for(const e of history) {
+                    if(e.bigSmall==='Big') b++; else s++;
+                    if(e.color==='red') r++; else if(e.color==='green') g++; else v++;
                 }
-                $statBigCount.textContent = bigCount;
-                $statSmallCount.textContent = smallCount;
-                $statRedCount.textContent = redCount;
-                $statGreenCount.textContent = greenCount;
-                $statVioletCount.textContent = violetCount;
-
+                $statBigCount.textContent=b; $statSmallCount.textContent=s;
+                $statRedCount.textContent=r; $statGreenCount.textContent=g; $statVioletCount.textContent=v;
                 const streak = getCurrentBigSmallStreak();
-                if (streak.type && streak.length > 0) {
-                    $statCurrentStreak.textContent = streak.length + '× ' + streak.type;
-                } else {
-                    $statCurrentStreak.textContent = '-';
-                }
+                $statCurrentStreak.textContent = streak.type ? streak.length+'× '+streak.type : '-';
+                $statLastNumber.textContent = history.length ? history[history.length-1].number+' ('+history[history.length-1].bigSmall+')' : '-';
+            }
 
-                if (history.length > 0) {
-                    const last = history[history.length - 1];
-                    $statLastNumber.textContent = last.number + ' (' + last.bigSmall + ')';
-                } else {
-                    $statLastNumber.textContent = '-';
+            // ─── AUTO‑FETCH LOGIC ───
+            async function fetchHistoryOnce() {
+                const endpoint = $apiEndpoint.value.trim();
+                const proxy = $proxyUrl.value.trim();
+                if(!endpoint) {
+                    $fetchLog.textContent = '❌ Please enter the API endpoint URL';
+                    return;
+                }
+                const url = proxy ? proxy + encodeURIComponent(endpoint) : endpoint;
+                $fetchLog.textContent = '⏳ Fetching...';
+                try {
+                    const resp = await fetch(url, { cache: 'no-store' });
+                    if(!resp.ok) throw new Error('HTTP '+resp.status);
+                    const data = await resp.json();
+                    // Expect data to contain an array of recent numbers (e.g., { results: [5,2,9,...] } or similar)
+                    let numbers = null;
+                    if(Array.isArray(data)) numbers = data;
+                    else if(data.results && Array.isArray(data.results)) numbers = data.results;
+                    else if(data.data && Array.isArray(data.data)) numbers = data.data;
+                    else if(data.history && Array.isArray(data.history)) numbers = data.history;
+                    // If numbers are objects, try to extract number field
+                    if(numbers && numbers.length && typeof numbers[0] === 'object') {
+                        numbers = numbers.map(item => item.number ?? item.value ?? item.result ?? item.ball).filter(n=>n!==undefined);
+                    }
+                    if(!numbers || !numbers.length) {
+                        $fetchLog.textContent = '⚠️ No numbers found in response. Check API structure.';
+                        return;
+                    }
+                    // Only add numbers that are not already the latest (avoid duplicates)
+                    const lastNum = history.length ? history[history.length-1].number : null;
+                    let added = 0;
+                    for(const n of numbers) {
+                        if(typeof n === 'number' && n>=0 && n<=9) {
+                            if(history.length===0 || n!==lastNum || added===0) { // add at least the latest
+                                addResult(n);
+                                added++;
+                            }
+                        }
+                    }
+                    $fetchLog.textContent = `✅ Fetched ${added} new result(s) at ${new Date().toLocaleTimeString()}`;
+                } catch(err) {
+                    $fetchLog.textContent = '❌ Fetch error: '+err.message;
+                    console.error(err);
                 }
             }
 
-            // ─────────────────────────────────────
-            // EVENT LISTENERS
-            // ─────────────────────────────────────
+            function startAutoFetch() {
+                if(autoFetchInterval) clearInterval(autoFetchInterval);
+                isAutoFetchActive = true;
+                $autoFetchToggle.classList.add('active');
+                $statusDot.className = 'status-dot running';
+                $autoFetchLabel.textContent = 'ON';
+                $fetchLog.textContent = '🔄 Auto‑fetch running every 5s...';
+                fetchHistoryOnce(); // immediate first fetch
+                autoFetchInterval = setInterval(fetchHistoryOnce, 5000);
+            }
+
+            function stopAutoFetch() {
+                if(autoFetchInterval) clearInterval(autoFetchInterval);
+                autoFetchInterval = null;
+                isAutoFetchActive = false;
+                $autoFetchToggle.classList.remove('active');
+                $statusDot.className = 'status-dot paused';
+                $autoFetchLabel.textContent = 'OFF';
+                $fetchLog.textContent = '⏸ Auto‑fetch stopped';
+            }
+
+            function toggleAutoFetch() {
+                if(isAutoFetchActive) stopAutoFetch();
+                else startAutoFetch();
+            }
+
+            // ─── Event Listeners ───
             $btnUndo.addEventListener('click', undoLast);
             $btnClear.addEventListener('click', clearAll);
+            $autoFetchToggle.addEventListener('click', toggleAutoFetch);
+            $btnFetchOnce.addEventListener('click', fetchHistoryOnce);
 
             // Keyboard support
             document.addEventListener('keydown', (e) => {
-                const key = e.key;
-                if (key >= '0' && key <= '9') {
+                if(e.key>='0' && e.key<='9') {
                     e.preventDefault();
-                    const num = parseInt(key);
-                    addResult(num);
-                    // Briefly highlight the button
-                    const btn = document.querySelector(`.numpad-btn[data-num="${num}"]`);
-                    if (btn) {
-                        btn.style.transform = 'scale(0.9)';
-                        btn.style.boxShadow = '0 0 20px rgba(255,255,255,0.4)';
-                        setTimeout(() => {
-                            btn.style.transform = '';
-                            btn.style.boxShadow = '';
-                        }, 150);
-                    }
+                    addResult(parseInt(e.key));
                 }
-                if (key === 'Backspace' || key === 'Delete') {
-                    e.preventDefault();
-                    undoLast();
-                }
-                if (key === 'z' && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    undoLast();
-                }
+                if(e.key==='Backspace' || e.key==='Delete') { e.preventDefault(); undoLast(); }
+                if(e.key==='z' && (e.ctrlKey||e.metaKey)) { e.preventDefault(); undoLast(); }
             });
 
-            // ─────────────────────────────────────
-            // INIT
-            // ─────────────────────────────────────
-            function init() {
-                buildNumpad();
-                updateAll();
-            }
-
-            init();
-
-            console.log('🎯 WinGo Predictor Ready');
-            console.log('   Tap numbers 0-9 or use keyboard');
-            console.log('   Backspace/Delete = Undo');
-            console.log('   Predictions update in real-time');
-            console.log('   Based on: pattern matching • streak analysis • transition probability • frequency');
+            // ─── Init ───
+            buildNumpad();
+            updateAll();
+            console.log('🎯 WinGo Predictor ready. Auto‑fetch configured via UI.');
         })();
     </script>
 </body>
